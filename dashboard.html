@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DC Apartment Dashboard</title>
+  <!-- Last scraped: 2026-03-23 via Zillow + Apartments.com -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f4f5f7;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    header p { font-size: 0.85rem; color: #aab; margin-top: 3px; }
+
+    .criteria-bar {
+      background: #2d3561;
+      color: #ccd;
+      padding: 10px 32px;
+      font-size: 0.8rem;
+      display: flex;
+      gap: 24px;
+    }
+
+    .criteria-bar span { display: flex; align-items: center; gap: 6px; }
+    .criteria-bar strong { color: white; }
+
+    /* Map section */
+    .map-section {
+      padding: 20px 32px 0;
+    }
+
+    .map-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .map-header h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #map {
+      height: 440px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .map-legend {
+      display: flex;
+      gap: 18px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: #555;
+      flex-wrap: wrap;
+    }
+
+    .map-legend span { display: flex; align-items: center; gap: 5px; }
+
+    .legend-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 2px solid rgba(0,0,0,0.25);
+    }
+
+    .legend-dot-green  { background: #27ae60; }
+    .legend-dot-gray   { background: #888; }
+    .legend-dot-metro  { background: #c0392b; }
+
+    .controls {
+      padding: 20px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .controls input, .controls select {
+      padding: 8px 12px;
+      border: 1px solid #d0d3e0;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      background: white;
+      color: #1a1a2e;
+    }
+
+    .controls input:focus, .controls select:focus {
+      outline: none;
+      border-color: #4a6cf7;
+    }
+
+    label { font-size: 0.8rem; color: #555; margin-right: 4px; }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary { background: #4a6cf7; color: white; }
+    .btn-primary:hover { background: #3a5ce7; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-secondary { background: #eef0f5; color: #333; }
+    .btn-secondary:hover { background: #e0e3ec; }
+    .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+    .count {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .table-wrap {
+      padding: 0 32px 32px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    thead {
+      background: #1a1a2e;
+      color: white;
+    }
+
+    thead th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    thead th:hover { background: #2d3561; }
+    thead th.sorted-asc::after  { content: " ▲"; font-size: 0.65rem; }
+    thead th.sorted-desc::after { content: " ▼"; font-size: 0.65rem; }
+
+    tbody tr {
+      border-bottom: 1px solid #eef0f5;
+      transition: background 0.1s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f7f8fc; }
+
+    td {
+      padding: 11px 14px;
+      font-size: 0.875rem;
+      vertical-align: middle;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .tag-dupont { background: #e8f4fd; color: #1a6fa8; }
+    .tag-west   { background: #eaf7f0; color: #1a7a4a; }
+
+    .tag-parking-yes     { background: #eaf7f0; color: #1a7a4a; }
+    .tag-parking-no      { background: #fdeaea; color: #a81a1a; }
+    .tag-parking-unknown { background: #f0f0f0; color: #777; }
+
+    .tag-status-available  { background: #eaf7f0; color: #1a7a4a; }
+    .tag-status-soon       { background: #fff8e1; color: #7a5c1a; }
+    .tag-status-unavailable{ background: #fdeaea; color: #a81a1a; }
+
+    .price { font-weight: 600; }
+    .price-over { color: #e74c3c; }
+    .price-ok   { color: #1a7a4a; }
+
+    a.listing-link {
+      color: #4a6cf7;
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    a.listing-link:hover { text-decoration: underline; }
+
+    td.notes-cell {
+      max-width: 180px;
+      font-size: 0.8rem;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Metro cell */
+    .metro-cell {
+      white-space: nowrap;
+      font-size: 0.82rem;
+    }
+
+    .metro-station { font-weight: 500; color: #1a1a2e; }
+    .metro-walk { color: #555; font-size: 0.78rem; }
+    .metro-approx { color: #aaa; font-size: 0.72rem; }
+
+    .line-badge {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .line-red    { background: #BF0D3E; }
+    .line-blue   { background: #009CDE; }
+    .line-orange { background: #ED8B00; }
+    .line-silver { background: #91A3B0; }
+    .line-bos    { background: #009CDE; } /* Blue/Orange/Silver grouped */
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 28px;
+      width: 520px;
+      max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+
+    .modal h2 { font-size: 1.1rem; margin-bottom: 20px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label { font-size: 0.78rem; color: #444; font-weight: 500; }
+
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 8px 10px;
+      border: 1px solid #d0d3e0;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+    }
+
+    .form-group textarea { resize: vertical; height: 60px; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: #888;
+    }
+
+    .empty-state p { font-size: 0.95rem; }
+    .empty-state span { font-size: 2rem; display: block; margin-bottom: 10px; }
+
+    /* Leaflet popup overrides */
+    .leaflet-popup-content { font-size: 0.85rem; line-height: 1.5; min-width: 180px; }
+    .leaflet-popup-content strong { display: block; margin-bottom: 4px; }
+    .leaflet-popup-content .popup-price { color: #1a7a4a; font-weight: 600; }
+    .leaflet-popup-content .popup-metro { color: #555; margin-top: 4px; font-size: 0.78rem; }
+    .leaflet-popup-content .popup-approx { color: #aaa; font-size: 0.72rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>DC Apartment Dashboard</h1>
+    <p>West End &amp; Dupont Circle · Move-in June 1, 2026 · Last scraped: 2026-03-23</p>
+  </div>
+</header>
+
+<div class="criteria-bar">
+  <span>Neighborhoods: <strong>West End, Dupont Circle</strong></span>
+  <span>Size: <strong>2 Bed</strong></span>
+  <span>Max Rent: <strong>$4,000/mo</strong></span>
+  <span>Parking: <strong>Required</strong></span>
+</div>
+
+<!-- Map -->
+<div class="map-section">
+  <div class="map-header">
+    <h2>Map</h2>
+    <button class="btn btn-secondary btn-sm" onclick="toggleMap()" id="map-toggle-btn">Hide Map</button>
+  </div>
+  <div id="map-container">
+    <div id="map"></div>
+    <div class="map-legend">
+      <span><span class="legend-dot legend-dot-metro"></span> Metro station</span>
+      <span style="color:#aaa;">* = approximate location for some listings</span>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div>
+    <label>Neighborhood</label>
+    <select id="filter-neighborhood" onchange="renderTable()">
+      <option value="">All</option>
+      <option value="West End">West End</option>
+      <option value="Dupont Circle">Dupont Circle</option>
+    </select>
+  </div>
+  <div>
+    <label>Max Price</label>
+    <select id="filter-price" onchange="renderTable()">
+      <option value="">Any</option>
+      <option value="3000">≤ $3,000</option>
+      <option value="3500">≤ $3,500</option>
+      <option value="4000" selected>≤ $4,000</option>
+    </select>
+  </div>
+  <div>
+    <label>Parking</label>
+    <select id="filter-parking" onchange="renderTable()">
+      <option value="">Any</option>
+      <option value="Yes">Yes only</option>
+    </select>
+  </div>
+  <div>
+    <label>Status</label>
+    <select id="filter-status" onchange="renderTable()">
+      <option value="">All</option>
+      <option value="Available">Available</option>
+      <option value="Coming Soon">Coming Soon</option>
+    </select>
+  </div>
+  <input type="text" id="filter-search" placeholder="Search name or address..." oninput="renderTable()" style="min-width:200px;" />
+  <span class="count" id="listing-count"></span>
+  <button class="btn btn-primary" onclick="openModal()">+ Add Listing</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('name')">Building / Name</th>
+        <th onclick="sortBy('neighborhood')">Neighborhood</th>
+        <th onclick="sortBy('address')">Address</th>
+        <th onclick="sortBy('price')">Rent/mo</th>
+        <th onclick="sortBy('sqft')">Sq Ft</th>
+        <th onclick="sortBy('parking')">Parking</th>
+        <th onclick="sortBy('metroWalkMin')">Metro</th>
+        <th onclick="sortBy('available')">Available</th>
+        <th onclick="sortBy('status')">Status</th>
+        <th>Link</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Add Listing</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Building / Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. The Westerly" />
+      </div>
+      <div class="form-group">
+        <label>Neighborhood *</label>
+        <select id="f-neighborhood">
+          <option value="West End">West End</option>
+          <option value="Dupont Circle">Dupont Circle</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Address</label>
+        <input type="text" id="f-address" placeholder="e.g. 1234 M St NW, Washington DC" />
+      </div>
+      <div class="form-group">
+        <label>Monthly Rent ($)</label>
+        <input type="number" id="f-price" placeholder="3800" />
+      </div>
+      <div class="form-group">
+        <label>Sq Ft</label>
+        <input type="number" id="f-sqft" placeholder="950" />
+      </div>
+      <div class="form-group">
+        <label>Parking</label>
+        <select id="f-parking">
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+          <option value="Unknown">Unknown</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Available Date</label>
+        <input type="text" id="f-available" placeholder="e.g. June 1, 2026" />
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="Available">Available</option>
+          <option value="Coming Soon">Coming Soon</option>
+          <option value="Unavailable">Unavailable</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Listing URL</label>
+        <input type="url" id="f-url" placeholder="https://..." />
+      </div>
+      <div class="form-group full">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="e.g. Corner unit, great light, toured on 3/25..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveListing()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'dc_apartments_v2';
+
+  // Scraped 2026-03-23 from Zillow + Apartments.com
+  // 2BR, West End / Dupont Circle, ≤$4,000/mo, parking required
+  // Metro walk times are estimates based on straight-line distance at ~15 min/mile
+  const SEED_LISTINGS = [
+    {
+      name: "The Bond",
+      neighborhood: "West End",
+      address: "1230 New Hampshire Ave NW, Washington, DC 20036",
+      price: "3632", sqft: "625", parking: "Yes",
+      available: "Now", status: "Available",
+      url: "https://www.apartments.com/the-bond-washington-dc/t39278b/",
+      notes: "FREE parking included. 2BR $3,632–$5,052, 625–650 sqft. Doorman, concierge, gated courtyard. Source: Apartments.com",
+      lat: 38.9088, lng: -77.0444, coordsApprox: false,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+    },
+    {
+      name: "The Flats at Dupont Circle",
+      neighborhood: "Dupont Circle",
+      address: "2000 N St NW, Washington, DC 20036",
+      price: "3863", sqft: "1089", parking: "Yes",
+      available: "Now", status: "Available",
+      url: "https://www.zillow.com/apartments/washington-dc/the-flats-at-dupont-circle/CjhTQB/",
+      notes: "Covered/garage parking. 14 units available. Pool, fitness, yoga studio. Half-month free promo. Source: Zillow",
+      lat: 38.9105, lng: -77.0460, coordsApprox: false,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 3 }
+    },
+    {
+      name: "1301 Thomas Circle",
+      neighborhood: "Dupont Circle",
+      address: "1301 M St NW, Washington, DC 20005",
+      price: "3356", sqft: "910", parking: "Yes",
+      available: "Now", status: "Available",
+      url: "https://www.apartments.com/1301-thomas-circle-washington-dc/q81qevx/",
+      notes: "Reserved garage + tandem parking. 2BR $3,356–$5,078, 910–1,266 sqft. Pool, rooftop grill, W/D in unit. 1 month free. Source: Apartments.com",
+      lat: 38.9077, lng: -77.0349, coordsApprox: false,
+      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 }
+    },
+    {
+      name: "Winston House",
+      neighborhood: "West End",
+      address: "2140 L St NW, Washington, DC 20037",
+      price: "3975", sqft: "900", parking: "Yes",
+      available: "Now", status: "Available",
+      url: "https://www.apartments.com/winston-house-washington-dc/mw6h0fj/",
+      notes: "Garage parking +$250/mo extra (total w/ parking ~$4,225+). 2BR $3,975–$4,400, 900–1,071 sqft. Concierge, sauna, furnished available. Source: Apartments.com",
+      lat: 38.9033, lng: -77.0467, coordsApprox: false,
+      metro: { station: "Farragut North", line: "Red", walkMin: 6 }
+    },
+    {
+      name: "The Shelburne",
+      neighborhood: "Dupont Circle",
+      address: "1631 S St NW, Washington, DC 20009",
+      price: "2899", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.zillow.com/apartments/washington-dc/the-shelburne-apartments/CkCjjS/",
+      notes: "2BR from $2,899. Parking unconfirmed — verify before applying. Source: Zillow",
+      lat: 38.9143, lng: -77.0440, coordsApprox: false,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 5 }
+    },
+    {
+      name: "1630 R St NW",
+      neighborhood: "Dupont Circle",
+      address: "1630 R St NW, Washington, DC 20009",
+      price: "3700", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.zillow.com/apartments/washington-dc/1630-r-st/5Xhv6M/",
+      notes: "2BR from $3,700. Parking unconfirmed — verify before applying. Source: Zillow",
+      lat: 38.9115, lng: -77.0438, coordsApprox: false,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+    },
+    {
+      name: "The Windsor - Kalorama",
+      neighborhood: "Dupont Circle",
+      address: "Washington, DC",
+      price: "3693", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/the-windsor-kalorama-washington-dc/vhzxwre/",
+      notes: "2BR from $3,693. 2 months free. Parking unconfirmed — verify before applying. Source: Apartments.com",
+      lat: 38.9180, lng: -77.0490, coordsApprox: true,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 8 }
+    },
+    {
+      name: "Highbridge",
+      neighborhood: "Dupont Circle",
+      address: "Washington, DC",
+      price: "3644", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/highbridge-washington-dc/gxkd4px/",
+      notes: "2BR from $3,644. Parking unconfirmed. Source: Apartments.com",
+      lat: 38.9120, lng: -77.0420, coordsApprox: true,
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+    },
+    {
+      name: "Varsity on K",
+      neighborhood: "Dupont Circle",
+      address: "Washington, DC",
+      price: "3942", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/varsity-on-k-washington-dc/r0qe050/",
+      notes: "2BR from $3,942. Parking unconfirmed. Source: Apartments.com",
+      lat: 38.9025, lng: -77.0365, coordsApprox: true,
+      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 }
+    },
+    {
+      name: "950 25th St NW (Unit 607-N)",
+      neighborhood: "West End",
+      address: "950 25th St NW, Washington, DC 20037",
+      price: "3300", sqft: "", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/950-25th-st-nw-washington-dc-unit-607-n/lqx1jpf/",
+      notes: "Individual unit. 2BR $3,300. Parking unconfirmed. Source: Apartments.com",
+      lat: 38.9050, lng: -77.0485, coordsApprox: false,
+      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 7 }
+    },
+    {
+      name: "1117 New Hampshire Ave NW (Unit 9)",
+      neighborhood: "West End",
+      address: "1117 New Hampshire Ave NW, Washington, DC 20037",
+      price: "3700", sqft: "916", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/1117-new-hampshire-ave-nw-washington-dc-unit-9/4vtv3bj/",
+      notes: "Individual unit. 2BR $3,700, 916 sqft. Parking unconfirmed. Source: Apartments.com",
+      lat: 38.9025, lng: -77.0440, coordsApprox: false,
+      metro: { station: "Farragut North", line: "Red", walkMin: 7 }
+    },
+    {
+      name: "3 Washington Cir NW (Unit 801)",
+      neighborhood: "West End",
+      address: "3 Washington Cir NW, Washington, DC 20037",
+      price: "4000", sqft: "1184", parking: "Unknown",
+      available: "", status: "Available",
+      url: "https://www.apartments.com/3-washington-cir-nw-washington-dc-unit-801/b0m7bnb/",
+      notes: "Individual unit. 2BR $4,000, 1,184 sqft. At budget limit. Parking unconfirmed. Source: Apartments.com",
+      lat: 38.9023, lng: -77.0511, coordsApprox: false,
+      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 6 }
+    }
+  ];
+
+  // Metro stations shown on map
+  const METRO_STATIONS = [
+    { name: "Dupont Circle",     line: "Red",               lat: 38.9101, lng: -77.0426 },
+    { name: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", lat: 38.9003, lng: -77.0502 },
+    { name: "McPherson Square", line: "Blue/Orange/Silver", lat: 38.9015, lng: -77.0343 },
+    { name: "Farragut North",   line: "Red",               lat: 38.9073, lng: -77.0427 },
+    { name: "Farragut West",    line: "Blue/Orange/Silver", lat: 38.9005, lng: -77.0400 },
+  ];
+
+  // ---- State ----
+  let stored = localStorage.getItem(STORAGE_KEY);
+  let parsed = stored ? JSON.parse(stored) : null;
+  let listings = (parsed && parsed.length > 0) ? parsed : SEED_LISTINGS.slice();
+  if (!stored || parsed.length === 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
+  let editIndex = null;
+  let sortCol = 'price';
+  let sortDir = 1;
+  let mapVisible = true;
+  let map = null;
+  let listingMarkers = [];
+
+  // ---- Map ----
+  function initMap() {
+    map = L.map('map').setView([38.907, -77.043], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Metro station markers
+    METRO_STATIONS.forEach(station => {
+      const lineColor = station.line.startsWith('Red') ? '#BF0D3E' : '#009CDE';
+      const metroIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+          background:${lineColor};
+          color:white;
+          border-radius:4px;
+          padding:2px 5px;
+          font-size:10px;
+          font-weight:700;
+          font-family:sans-serif;
+          white-space:nowrap;
+          border:2px solid white;
+          box-shadow:0 1px 4px rgba(0,0,0,0.4);
+        ">M</div>`,
+        iconAnchor: [10, 10]
+      });
+      L.marker([station.lat, station.lng], { icon: metroIcon, zIndexOffset: -100 })
+        .addTo(map)
+        .bindPopup(`<strong>${station.name}</strong><br/><span style="color:#555;font-size:0.78rem;">${station.line} Line</span>`);
+    });
+
+    renderMapMarkers();
+  }
+
+  function renderMapMarkers() {
+    if (!map) return;
+
+    // Remove old listing markers
+    listingMarkers.forEach(m => map.removeLayer(m));
+    listingMarkers = [];
+
+    const filtered = getFiltered();
+
+    filtered.forEach(l => {
+      if (!l.lat || !l.lng) return;
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="
+          background:white;
+          border:1.5px solid #1a1a2e;
+          border-radius:4px;
+          padding:2px 6px;
+          font-size:11px;
+          font-family:sans-serif;
+          font-weight:600;
+          color:#1a1a2e;
+          white-space:nowrap;
+          box-shadow:0 1px 3px rgba(0,0,0,0.2);
+        ">${escHtml(l.name)}</div>`,
+        iconAnchor: [0, 0]
+      });
+
+      const marker = L.marker([l.lat, l.lng], { icon }).addTo(map);
+      listingMarkers.push(marker);
+    });
+  }
+
+  function lineColor(line) {
+    if (line === 'Red') return '#BF0D3E';
+    if (line === 'Blue/Orange/Silver') return '#009CDE';
+    return '#888';
+  }
+
+  function toggleMap() {
+    mapVisible = !mapVisible;
+    document.getElementById('map-container').style.display = mapVisible ? 'block' : 'none';
+    document.getElementById('map-toggle-btn').textContent = mapVisible ? 'Hide Map' : 'Show Map';
+    if (mapVisible && map) map.invalidateSize();
+  }
+
+  // ---- Persistence ----
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(listings)); }
+
+  // ---- Sorting ----
+  function sortBy(col) {
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = 1; }
+    renderTable();
+  }
+
+  // ---- Filtering ----
+  function getFiltered() {
+    const nbhd   = document.getElementById('filter-neighborhood').value;
+    const maxP   = parseInt(document.getElementById('filter-price').value) || Infinity;
+    const park   = document.getElementById('filter-parking').value;
+    const status = document.getElementById('filter-status').value;
+    const search = document.getElementById('filter-search').value.toLowerCase();
+
+    return listings.filter(l => {
+      if (nbhd   && l.neighborhood !== nbhd) return false;
+      if (park   && l.parking !== park)       return false;
+      if (status && l.status !== status)      return false;
+      if (l.price && parseInt(l.price) > maxP) return false;
+      if (search && !`${l.name} ${l.address}`.toLowerCase().includes(search)) return false;
+      return true;
+    }).sort((a, b) => {
+      if (sortCol === 'metroWalkMin') {
+        const va = a.metro ? a.metro.walkMin : 999;
+        const vb = b.metro ? b.metro.walkMin : 999;
+        return (va - vb) * sortDir;
+      }
+      let va = a[sortCol] || '';
+      let vb = b[sortCol] || '';
+      if (sortCol === 'price' || sortCol === 'sqft') {
+        va = parseFloat(va) || 0;
+        vb = parseFloat(vb) || 0;
+        return (va - vb) * sortDir;
+      }
+      return va.localeCompare(vb) * sortDir;
+    });
+  }
+
+  // ---- Tag renderers ----
+  function neighborhoodTag(n) {
+    const cls = n === 'West End' ? 'tag-west' : n === 'Dupont Circle' ? 'tag-dupont' : '';
+    return `<span class="tag ${cls}">${n}</span>`;
+  }
+
+  function parkingTag(p) {
+    const cls = p === 'Yes' ? 'tag-parking-yes' : p === 'No' ? 'tag-parking-no' : 'tag-parking-unknown';
+    return `<span class="tag ${cls}">${p || 'Unknown'}</span>`;
+  }
+
+  function statusTag(s) {
+    const cls = s === 'Available' ? 'tag-status-available' : s === 'Coming Soon' ? 'tag-status-soon' : 'tag-status-unavailable';
+    return `<span class="tag ${cls}">${s}</span>`;
+  }
+
+  function priceDisplay(p) {
+    if (!p) return '—';
+    const n = parseInt(p);
+    return `<span class="price ${n > 4000 ? 'price-over' : 'price-ok'}">$${n.toLocaleString()}</span>`;
+  }
+
+  function metroCell(l) {
+    if (!l.metro) return '<span style="color:#aaa;">—</span>';
+    const color = lineColor(l.metro.line);
+    const approx = l.coordsApprox ? ' <span class="metro-approx">*est.</span>' : '';
+    const lineLabel = l.metro.line === 'Red' ? 'Red' : 'Blue/Or/Si';
+    return `
+      <div class="metro-cell">
+        <div class="metro-station">
+          <span class="line-badge" style="background:${color};"></span>${escHtml(l.metro.station)}
+        </div>
+        <div class="metro-walk">~${l.metro.walkMin} min walk${approx}</div>
+      </div>`;
+  }
+
+  // ---- Render ----
+  function renderTable() {
+    const filtered = getFiltered();
+    const tbody = document.getElementById('table-body');
+    document.getElementById('listing-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`;
+
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><span>🏠</span><p>No listings match your filters.</p></div></td></tr>`;
+      renderMapMarkers();
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(l => {
+      const origIndex = listings.indexOf(l);
+      return `
+        <tr>
+          <td><strong>${escHtml(l.name)}</strong></td>
+          <td>${neighborhoodTag(l.neighborhood)}</td>
+          <td>${escHtml(l.address || '—')}</td>
+          <td>${priceDisplay(l.price)}</td>
+          <td>${l.sqft ? parseInt(l.sqft).toLocaleString() + ' ft²' : '—'}</td>
+          <td>${parkingTag(l.parking || 'Unknown')}</td>
+          <td>${metroCell(l)}</td>
+          <td>${escHtml(l.available || '—')}</td>
+          <td>${statusTag(l.status || 'Unknown')}</td>
+          <td>${l.url ? `<a class="listing-link" href="${escHtml(l.url)}" target="_blank">View ↗</a>` : '—'}</td>
+          <td class="notes-cell" title="${escHtml(l.notes || '')}">${escHtml(l.notes || '—')}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="editListing(${origIndex})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteListing(${origIndex})" style="margin-left:4px">×</button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    renderMapMarkers();
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ---- Modal ----
+  function openModal(idx = null) {
+    editIndex = idx;
+    document.getElementById('modal-title').textContent = idx === null ? 'Add Listing' : 'Edit Listing';
+    const l = idx !== null ? listings[idx] : {};
+    document.getElementById('f-name').value         = l.name || '';
+    document.getElementById('f-neighborhood').value = l.neighborhood || 'West End';
+    document.getElementById('f-address').value      = l.address || '';
+    document.getElementById('f-price').value        = l.price || '';
+    document.getElementById('f-sqft').value         = l.sqft || '';
+    document.getElementById('f-parking').value      = l.parking || 'Yes';
+    document.getElementById('f-available').value    = l.available || '';
+    document.getElementById('f-status').value       = l.status || 'Available';
+    document.getElementById('f-url').value          = l.url || '';
+    document.getElementById('f-notes').value        = l.notes || '';
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f-name').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    editIndex = null;
+  }
+
+  function saveListing() {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { alert('Building name is required.'); return; }
+    const listing = {
+      name,
+      neighborhood: document.getElementById('f-neighborhood').value,
+      address:   document.getElementById('f-address').value.trim(),
+      price:     document.getElementById('f-price').value.trim(),
+      sqft:      document.getElementById('f-sqft').value.trim(),
+      parking:   document.getElementById('f-parking').value,
+      available: document.getElementById('f-available').value.trim(),
+      status:    document.getElementById('f-status').value,
+      url:       document.getElementById('f-url').value.trim(),
+      notes:     document.getElementById('f-notes').value.trim(),
+      // preserve existing geo/metro data if editing
+      lat: editIndex !== null ? (listings[editIndex].lat || null) : null,
+      lng: editIndex !== null ? (listings[editIndex].lng || null) : null,
+      coordsApprox: editIndex !== null ? (listings[editIndex].coordsApprox || true) : true,
+      metro: editIndex !== null ? (listings[editIndex].metro || null) : null,
+    };
+    if (editIndex !== null) listings[editIndex] = listing;
+    else listings.push(listing);
+    save();
+    closeModal();
+    renderTable();
+  }
+
+  function editListing(idx)   { openModal(idx); }
+
+  function deleteListing(idx) {
+    if (!confirm(`Remove "${listings[idx].name}"?`)) return;
+    listings.splice(idx, 1);
+    save();
+    renderTable();
+  }
+
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ---- Init ----
+  renderTable();
+  initMap();
+</script>
+</body>
+</html>
