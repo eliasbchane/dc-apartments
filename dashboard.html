@@ -397,6 +397,7 @@
         <th onclick="sortBy('sqft')">Sq Ft</th>
         <th onclick="sortBy('parking')">Parking</th>
         <th onclick="sortBy('metroWalkMin')">Metro</th>
+        <th onclick="sortBy('dateAdded')">Date Added</th>
         <th onclick="sortBy('available')">Available</th>
         <th onclick="sortBy('status')">Status</th>
         <th>Link</th>
@@ -474,7 +475,7 @@
 </div>
 
 <script>
-  const STORAGE_KEY = 'dc_apartments_v3';
+  const STORAGE_KEY = 'dc_apartments_v4';
 
   // Scraped 2026-03-23 from Zillow + Apartments.com
   // 2BR, West End / Dupont Circle, ≤$4,000/mo, parking required
@@ -489,7 +490,8 @@
       url: "https://www.apartments.com/the-bond-washington-dc/t39278b/",
       notes: "FREE parking included. 2BR $3,632–$5,052, 625–650 sqft. Doorman, concierge, gated courtyard. Source: Apartments.com",
       lat: 38.9088, lng: -77.0444, coordsApprox: false,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "The Flats at Dupont Circle",
@@ -500,7 +502,8 @@
       url: "https://www.zillow.com/apartments/washington-dc/the-flats-at-dupont-circle/CjhTQB/",
       notes: "Covered/garage parking. 14 units available. Pool, fitness, yoga studio. Half-month free promo. Source: Zillow",
       lat: 38.9105, lng: -77.0460, coordsApprox: false,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 3 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 3 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "1301 Thomas Circle",
@@ -511,7 +514,8 @@
       url: "https://www.apartments.com/1301-thomas-circle-washington-dc/q81qevx/",
       notes: "Reserved garage + tandem parking. 2BR $3,356–$5,078, 910–1,266 sqft. Pool, rooftop grill, W/D in unit. 1 month free. Source: Apartments.com",
       lat: 38.9077, lng: -77.0349, coordsApprox: false,
-      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 }
+      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "Winston House",
@@ -522,7 +526,8 @@
       url: "https://www.apartments.com/winston-house-washington-dc/mw6h0fj/",
       notes: "Garage parking +$250/mo extra (total w/ parking ~$4,225+). 2BR $3,975–$4,400, 900–1,071 sqft. Concierge, sauna, furnished available. Source: Apartments.com",
       lat: 38.9033, lng: -77.0467, coordsApprox: false,
-      metro: { station: "Farragut North", line: "Red", walkMin: 6 }
+      metro: { station: "Farragut North", line: "Red", walkMin: 6 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "The Shelburne",
@@ -533,7 +538,8 @@
       url: "https://www.zillow.com/apartments/washington-dc/the-shelburne-apartments/CkCjjS/",
       notes: "2BR from $2,899. Parking unconfirmed — verify before applying. Source: Zillow",
       lat: 38.9143, lng: -77.0440, coordsApprox: false,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 5 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 5 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "1630 R St NW",
@@ -544,7 +550,8 @@
       url: "https://www.zillow.com/apartments/washington-dc/1630-r-st/5Xhv6M/",
       notes: "2BR from $3,700. Parking unconfirmed — verify before applying. Source: Zillow",
       lat: 38.9115, lng: -77.0438, coordsApprox: false,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "The Windsor - Kalorama",
@@ -555,7 +562,8 @@
       url: "https://www.apartments.com/the-windsor-kalorama-washington-dc/vhzxwre/",
       notes: "2BR from $3,693. 2 months free. Parking unconfirmed — verify before applying. Source: Apartments.com",
       lat: 38.9180, lng: -77.0490, coordsApprox: true,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 8 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 8 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "Highbridge",
@@ -566,7 +574,8 @@
       url: "https://www.apartments.com/highbridge-washington-dc/gxkd4px/",
       notes: "2BR from $3,644. Parking unconfirmed. Source: Apartments.com",
       lat: 38.9120, lng: -77.0420, coordsApprox: true,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 4 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "Varsity on K",
@@ -577,7 +586,8 @@
       url: "https://www.apartments.com/varsity-on-k-washington-dc/r0qe050/",
       notes: "2BR from $3,942. Parking unconfirmed. Source: Apartments.com",
       lat: 38.9025, lng: -77.0365, coordsApprox: true,
-      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 }
+      metro: { station: "McPherson Square", line: "Blue/Orange/Silver", walkMin: 5 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "950 25th St NW (Unit 607-N)",
@@ -588,7 +598,8 @@
       url: "https://www.apartments.com/950-25th-st-nw-washington-dc-unit-607-n/lqx1jpf/",
       notes: "Individual unit. 2BR $3,300. Parking unconfirmed. Source: Apartments.com",
       lat: 38.9050, lng: -77.0485, coordsApprox: false,
-      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 7 }
+      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 7 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "1117 New Hampshire Ave NW (Unit 9)",
@@ -599,7 +610,8 @@
       url: "https://www.apartments.com/1117-new-hampshire-ave-nw-washington-dc-unit-9/4vtv3bj/",
       notes: "Individual unit. 2BR $3,700, 916 sqft. Parking unconfirmed. Source: Apartments.com",
       lat: 38.9025, lng: -77.0440, coordsApprox: false,
-      metro: { station: "Farragut North", line: "Red", walkMin: 7 }
+      metro: { station: "Farragut North", line: "Red", walkMin: 7 },
+      dateAdded: "2026-03-23"
     },
     {
       name: "The DeSoto Apartments",
@@ -610,7 +622,8 @@
       url: "https://www.apartments.com/the-desoto-apartments-washington-dc/6r881mr/",
       notes: "2BR from $3,600. Parking unconfirmed. Source: Apartments.com (scraped 2026-03-26)",
       lat: 38.9090, lng: -77.0430, coordsApprox: true,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 5 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 5 },
+      dateAdded: "2026-03-26"
     },
     {
       name: "The Ellington",
@@ -621,7 +634,8 @@
       url: "https://www.apartments.com/the-ellington-washington-dc/lsrbwsd/",
       notes: "2BR from $2,967. Parking unconfirmed. Source: Apartments.com (scraped 2026-03-26)",
       lat: 38.9168, lng: -77.0321, coordsApprox: true,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 11 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 11 },
+      dateAdded: "2026-03-26"
     },
     {
       name: "Shelby",
@@ -632,7 +646,8 @@
       url: "https://www.zillow.com/apartments/washington-dc/shelby/5YyGn2/",
       notes: "2BR from $2,800. Parking unconfirmed. Source: Zillow (scraped 2026-03-26)",
       lat: 38.9163, lng: -77.0371, coordsApprox: false,
-      metro: { station: "Dupont Circle", line: "Red", walkMin: 9 }
+      metro: { station: "Dupont Circle", line: "Red", walkMin: 9 },
+      dateAdded: "2026-03-26"
     },
     {
       name: "3 Washington Cir NW (Unit 801)",
@@ -643,7 +658,8 @@
       url: "https://www.apartments.com/3-washington-cir-nw-washington-dc-unit-801/b0m7bnb/",
       notes: "Individual unit. 2BR $4,000, 1,184 sqft. At budget limit. Parking unconfirmed. Source: Apartments.com",
       lat: 38.9023, lng: -77.0511, coordsApprox: false,
-      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 6 }
+      metro: { station: "Foggy Bottom-GWU", line: "Blue/Orange/Silver", walkMin: 6 },
+      dateAdded: "2026-03-23"
     }
   ];
 
@@ -854,6 +870,7 @@
           <td>${l.sqft ? parseInt(l.sqft).toLocaleString() + ' ft²' : '—'}</td>
           <td>${parkingTag(l.parking || 'Unknown')}</td>
           <td>${metroCell(l)}</td>
+          <td style="font-size:0.8rem;color:#555;white-space:nowrap;">${l.dateAdded || '—'}</td>
           <td>${escHtml(l.available || '—')}</td>
           <td>${statusTag(l.status || 'Unknown')}</td>
           <td>${l.url ? `<a class="listing-link" href="${escHtml(l.url)}" target="_blank">View ↗</a>` : '—'}</td>
